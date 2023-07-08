@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        .top-nav {
+            background-color: #333333;
+            color: #ffffff;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: auto;
+            color: #ffffff;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            margin-right: 20px;
+            font-size: 18px;
+        }
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+        html, body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .content {
+            flex: 1;
+        }
+        .footer {
+            background-color: #333333;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a class="logo" href="{% url 'home' %}">Dolphin Fitness Gym</a>
+        <div class="nav-links">
+            <a href="{% url 'register_user' %}">Register</a>
+            <a href="{% url 'payment_table' %}">Payments</a>
+            <a href="{% url 'users' %}">Users</a>
+        </div>
+    </nav>
+
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2023 Fitness Gym. All rights reserved. | Designed by <a href="#" target="_blank">Kavindu B</a></p>
+    </footer>
+</body>
+</html>

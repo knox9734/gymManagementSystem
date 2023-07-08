@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    User List
+{% endblock %}
+
+{% block content %}
+    <h1>User List</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Birthday</th>
+                <th>Username</th>
+                <th>Add Payment</th>
+                <th>Delete User</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.name }}</td>
+                    <td>{{ user.birthday }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        <form method="POST" action="{% url 'add_payment' user.username %}">
+                            {% csrf_token %}
+                            <button type="submit" class="add-payment-btn">Add Payment</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="POST" action="{% url 'delete_user' user.username %}">
+                            {% csrf_token %}
+                            <button type="submit" class="delete-user-btn">Delete User</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-payment-btn {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .add-payment-btn:hover {
+            background-color: #45a049;
+        }
+        .delete-user-btn {
+            padding: 8px 16px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-user-btn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,287 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}
+    Payment details
+{% endblock %}
+<!DOCTYPE html>
+<html>
+{% block content %}
+<head>
+    <title>Payment Table</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body:before,
+body:after,
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+body:before {
+  background: linear-gradient(to bottom right, rgba(255, 255, 255, 0.2), rgba(0, 0, 0, 0.2));
+}
+
+body:after {
+  background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.2));
+  transform: rotate(45deg);
+}
+
+body::before {
+  background: linear-gradient(to top left, rgba(255, 0, 0, 0.2), rgba(0, 255, 0, 0.2));
+  transform: rotate(-30deg);
+}
+
+body::after {
+  background: linear-gradient(to top left, rgba(0, 255, 255, 0.2), rgba(255, 0, 255, 0.2));
+  transform: rotate(60deg);
+}
+
+        h1 {
+            text-align: center;
+        }
+        table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  border: 1px solid #ddd; /* Add border style */
+}
+
+th, td {
+  border: 3px solid #ddd; /* Add border style */
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+}
+        .chart-container {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            background-color: #fff;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .chart-name {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-weight: bold;
+            z-index: 1;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 6px 10px;
+            border-radius: 6px;
+            width: calc(100% - 20px);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .paid {
+            color: green;
+            font-weight: bold;
+        }
+        .not-paid {
+            color: red;
+            font-weight: bold;
+        }
+        .charts-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        #clock-widget {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            width: 200px;
+            height: 200px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: none; /* Remove the box shadow */
+}
+        #current-date {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <h1>Payment Table</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Payment Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.user.name }}</td>
+                    <td>{{ payment.payment_date }}</td>
+                    <td>{{ payment.amount }}</td>
+                    <td class="{% if payment.status == 'Paid' %}paid{% else %}not-paid{% endif %}">
+                        {% if payment.status == 'Paid' %}
+                            Paid
+                        {% else %}
+                            Not Paid
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="charts-container">
+        <!-- Monthly Paid Amounts Chart -->
+        <div class="chart-container">
+            <h2 class="chart-name">Monthly Paid Amounts</h2>
+            <canvas id="monthly-paid-chart"></canvas>
+        </div>
+        <div id="clock-widget">
+            <canvas id="clock-canvas" width="200" height="200"></canvas>
+            <div id="current-date"></div>
+          </div>
+        <!-- Payment Status Pie Chart -->
+        <div class="chart-container">
+            <h2 class="chart-name">Payment Status</h2>
+            <canvas id="payment-chart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Monthly Paid Amounts Chart
+        var monthlyPaidCtx = document.getElementById('monthly-paid-chart').getContext('2d');
+        var monthlyPaidLabels = [];
+        var monthlyPaidAmounts = [];
+
+        {% for month_paid in monthly_paid_amounts %}
+            monthlyPaidLabels.push('{{ month_paid.month|date:"F Y" }}');
+            monthlyPaidAmounts.push('{{ month_paid.total_amount }}');
+        {% endfor %}
+
+        var monthlyPaidChart = new Chart(monthlyPaidCtx, {
+            type: 'bar',
+            data: {
+                labels: monthlyPaidLabels,
+                datasets: [{
+                    label: 'Monthly Paid Amounts',
+                    data: monthlyPaidAmounts,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                indexAxis: 'y',
+                barPercentage: 0.5,
+                categoryPercentage: 0.8
+            }
+        });
+
+        // Payment Status Pie Chart
+        var paymentCtx = document.getElementById('payment-chart').getContext('2d');
+        var paidCount = {{ paid }};
+        var notPaidCount = {{ notPaid }};
+
+        var paymentChart = new Chart(paymentCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Paid', 'Not Paid'],
+                datasets: [{
+                    data: [paidCount, notPaidCount],
+                    backgroundColor: ['#00ff00', '#ff0000']
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    </script>
+<script>
+    function drawClock() {
+      var canvas = document.getElementById('clock-canvas');
+      var context = canvas.getContext('2d');
+      var radius = canvas.width / 2;
+  
+      // Clear canvas
+      context.clearRect(0, 0, canvas.width, canvas.height);
+  
+      // Draw clock face
+      context.beginPath();
+      context.arc(radius, radius, radius - 5, 0, 2 * Math.PI);
+      context.fillStyle = 'white';
+      context.fill();
+      context.lineWidth = 2;
+      context.strokeStyle = 'black';
+      context.stroke();
+  
+      // Draw hour hand
+      var now = new Date();
+      var hour = now.getHours() % 12;
+      var minute = now.getMinutes();
+      var second = now.getSeconds();
+      var hourAngle = (hour + minute / 60 + second / 3600) * (2 * Math.PI / 12) - Math.PI / 2;
+      drawHand(context, radius * 0.5, hourAngle, 6, 'black');
+  
+      // Draw minute hand
+      var minuteAngle = (minute + second / 60) * (2 * Math.PI / 60) - Math.PI / 2;
+      drawHand(context, radius * 0.7, minuteAngle, 4, 'black');
+  
+      // Draw second hand
+      var secondAngle = (second + now.getMilliseconds() / 1000) * (2 * Math.PI / 60) - Math.PI / 2;
+      drawHand(context, radius * 0.8, secondAngle, 2, 'red');
+        // Update current date
+      var currentDateElement = document.getElementById('current-date');
+      var currentDate = now.toDateString();
+      currentDateElement.textContent = currentDate;
+      // Update clock every 100 milliseconds
+      setTimeout(drawClock, 100);
+    }
+  
+    function drawHand(context, length, angle, width, color) {
+      context.beginPath();
+      context.lineWidth = width;
+      context.strokeStyle = color;
+      context.moveTo(context.canvas.width / 2, context.canvas.height / 2);
+      context.lineTo(
+        context.canvas.width / 2 + length * Math.cos(angle),
+        context.canvas.height / 2 + length * Math.sin(angle)
+      );
+      context.stroke();
+    }
+  
+    // Call the drawClock function to start drawing the clock
+    drawClock();
+  </script>
+</body>
+{% endblock %}
