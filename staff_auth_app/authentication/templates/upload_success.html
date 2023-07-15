@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Success</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        .flash-animation {
+            animation: flash 0.5s infinite;
+        }
+
+        @keyframes flash {
+            0% { background-color: red; }
+            50% { background-color: white; }
+            100% { background-color: red; }
+        }
+
+        h1 {
+            margin-top: 40px;
+        }
+
+        table {
+            margin: 40px auto;
+            border-collapse: collapse;
+            font-size: 18px;
+            width: 80%;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+
+        .not-paid {
+            background-color: red;
+            color: white;
+            animation: flash 0.5s infinite;
+        }
+
+        .error-message {
+            font-size: 60px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload Success</h1>
+
+    <table>
+        <tr>
+            <th>User</th>
+            <th>Payment Status</th>
+        </tr>
+        {% for user_status in payment_status %}
+        <tr {% if not user_status.paid %}class="not-paid"{% endif %}>
+            <td>{{ user_status.user }}</td>
+            <td>{% if user_status.paid %}Paid{% else %}Not Paid{% endif %}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <p {% if not user_status.paid %}class="error-message"{% endif %}>
+        {% if not user_status.paid %}You have not paid for this month. Please make the payment.{% endif %}
+    </p>
+
+    <script>
+        var notPaidRows = document.querySelectorAll('.not-paid');
+        notPaidRows.forEach(function(row) {
+            row.classList.add('flash-animation');
+        });
+    </script>
+
+    <!-- Other content or styling -->
+
+</body>
+</html>

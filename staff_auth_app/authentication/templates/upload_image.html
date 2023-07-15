@@ -1,0 +1,102 @@
+<!-- upload_image.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Barcode Reader</title>
+    <style>
+        video {
+            width: 400px;
+            height: 280px;
+        }
+        .scan-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .scan-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    
+    <video id="videoElement" autoplay></video>
+    <button class="scan-button" onclick="captureAndUpload()">Capture and Upload</button>
+    
+    <div id="resultContainer"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+   
+    <script>
+       function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    var video = document.getElementById("videoElement");
+    var mediaStream;
+
+    // Start the video stream on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                mediaStream = stream;
+                video.srcObject = stream;
+                video.onloadedmetadata = function(e) {
+                    video.play();
+                };
+            })
+            .catch(function(err) {
+                console.log(err);
+            });
+    });
+
+    function captureAndUpload() {
+        if (mediaStream) {
+            video.pause(); // Pause the video stream
+
+            var canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(function(blob) {
+                var formData = new FormData();
+                formData.append('image', blob);
+
+                var csrfToken = getCookie('csrftoken');
+
+                $.ajax({
+                    url: "{% url 'upload_image' %}",
+                    type: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Display the result in the resultContainer div
+                        $('#resultContainer').html(response);
+                    }
+                });
+            }, 'image/jpeg');
+        }
+    }
+    </script>
+</body>
+</html>

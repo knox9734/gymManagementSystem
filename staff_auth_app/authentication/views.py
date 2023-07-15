@@ -1,5 +1,5 @@
 from authentication.models import CustomUser,Payment
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,HttpResponse
 from datetime import date,timedelta,datetime
 from django.contrib import messages
 import random
@@ -8,14 +8,30 @@ from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
+import os
+import barcode
+from barcode.writer import ImageWriter
+from PIL import Image, ImageDraw, ImageFont
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2.credentials import Credentials
+from google.oauth2 import service_account
+from google.auth import default
+from twilio.rest import Client
+import requests
+from pyzbar.pyzbar import decode
+import cv2
+from django.utils import timezone
+import pywhatkit as pwk
+
 
 def register_user(request):
     if request.method == 'POST':
         name = request.POST['name']
         birthday = parse(request.POST['birthday']).date()
-
+        phone_number = request.POST['phone_number']
         # Create a new CustomUser object with the provided data
-        user = CustomUser(name=name, birthday=birthday)
+        user = CustomUser(name=name, birthday=birthday,phone_number=phone_number )
         user.save()
 
         # Retrieve the user object using the username
@@ -27,10 +43,84 @@ def register_user(request):
         payment = Payment(user=user, payment_date=random_date, amount=2500)
         payment.save()
 
+        # Generate bar code 
+        barcode_class = barcode.get_barcode_class('code128')
+        generated_barcode = barcode_class(user.username, writer=ImageWriter())
+
+        # Save the barcode as a PNG file
+        filename = user.name
+        current_path = os.getcwd()
+        filepath = os.path.join(current_path, 'media', filename)  # Constructing the path
+        generated_barcode.save(filepath)
+
+        # Assign the barcode and save the customer record
+        user.barcode = filename
+        barcode_image_url = '/media/' + filename + '.png'
+        file_path = filepath + '.png'
+        print(file_path)
+        font_name='OpenSans_Condensed-Bold.ttf'
+        font_path = os.path.join(current_path, 'static', font_name)
+        print(font_path)
+        # Append user's name to the barcode image
+        barcode_image = Image.open(file_path)
+        draw = ImageDraw.Draw(barcode_image)
+        font_size = 32  # Increase the font size to 16
+        font = ImageFont.truetype(font_path, size=font_size)
+        text = user.name
+        text_width, text_height = draw.textsize(text, font=font)
+        text_position = (barcode_image.width - text_width, barcode_image.height - text_height)
+        draw.text(text_position, text, font=font, fill=(0, 0, 0))
+
+        # Save the modified barcode image
+        barcode_image.save(file_path)
+        
+        # The path to the modified barcode image
+        
+
+        # Your ImgBB API key
+        api_key = '7fe048ffe10aaf71d769bd62c54adb26'
+
+        # The path to the modified barcode image
+        image_path = file_path
+
+        # Upload the image to ImgBB
+        with open(image_path, 'rb') as file:
+            response = requests.post(
+                "https://api.imgbb.com/1/upload",
+                params={"key": api_key},
+                files={"image": file}
+            )
+
+        # Get the image URL from the response
+        image_url = response.json()["data"]["url"]
+
+        print(f"Image URL: {image_url}")
+        # # Your Twilio account SID and auth token
+        # account_sid = 'ACd5fd9bc77397dfb5e6c464251d87d358'
+        # auth_token = '8da1176dac2f4cb208104c95ea4a089c'
+        # client = Client(account_sid, auth_token)
+
+        # message = client.messages.create(
+        # from_='whatsapp:+14155238886',
+        # body='Your Registered bar code for User Registration | Dolphin Fitness Gym',
+        # # media_url=['https://images.unsplash.com/photo-1545093149-618ce3bcf49d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=668&q=80'],
+        # media_url=[image_url],
+        # to='whatsapp:+94776070740'
+        # )
+        
+        new_phone_number = "+94" + phone_number[1:]
+        whtspp_msg = "Here is your registered bar code for User Registration | Dolphin Fitness Gym : "+image_url + " And Your Registration number is : "+user.username
+        # print(message.sid)
+        send_whatsapp_message(new_phone_number, whtspp_msg)
+        # pywhatkit.sendwhatmsg_instantly("+94776070740", "Hello, this is a test message")
+        
         # Add a success message
         messages.success(request, 'User registered successfully!')
 
     return render(request, 'registration.html')
+
+def send_whatsapp_message(number, message):
+    pwk.sendwhatmsg_instantly(f"+{number}", message)
 
 def users(request):
     users = CustomUser.objects.all()
@@ -66,7 +156,7 @@ def add_payment(request, username):
         # Optionally, you can add a success message
         messages.success(request, 'Payment added successfully.')
 
-        return redirect('users')
+        return redirect('payment_list')
     else:
         # Handle GET request for the form display
         return render(request, 'add_payment.html')
@@ -117,3 +207,101 @@ def delete_user(request, username):
         return redirect('users')
     else:
         return render(request, 'user_list.html')
+    
+def upload_image(request):
+    if request.method == 'POST' and 'image' in request.FILES:
+        image = request.FILES['image']
+
+        # Save the uploaded image to a temporary location
+        filename = 'temp.jpg'
+        current_path = os.getcwd()
+        image_path = os.path.join(current_path, 'media', filename)
+
+        # image_path = os.path.join(settings.MEDIA_ROOT, 'uploaded_image.jpg')
+        with open(image_path, 'wb') as file:
+            for chunk in image.chunks():
+                file.write(chunk)
+
+        # Call the BarcodeReader function with the image
+        img = cv2.imread(image_path)
+        detected_barcodes = decode(img)
+
+        if not detected_barcodes:
+            barcode_data = "Barcode Not Detected or your barcode is blank/corrupted!"
+            # os.remove(image_path)
+        else:
+            # os.remove(image_path)
+            barcode_data = []
+            for barcode in detected_barcodes:
+                barcode_data.append(barcode.data)
+        print('data in barcode : '+str(barcode_data))
+        customer_details = find_customer_by_barcode(barcode_data)
+        print(type(customer_details))
+        
+
+        if customer_details is not None:
+            if customer_details:
+                print("customer found:", customer_details.name)
+                payment_status = get_payment_data(customer_details.username)
+                return render(request, 'upload_success.html', {'payment_status': payment_status})
+            else:
+                print("customer not found")
+                return render(request, 'upload_image.html')
+        else:
+            return render(request, 'upload_image.html')
+
+    return render(request, 'upload_image.html')
+    
+def find_customer_by_barcode(barcode_data):
+    cleaned_data = str(barcode_data[0]).replace("b", "").replace("'", "")
+    try:
+        customer = CustomUser.objects.get(username=cleaned_data)
+        
+        return customer
+    except CustomUser.DoesNotExist:
+        return None
+    
+def payment_list(request):
+    current_month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current_month_end = (current_month_start + timezone.timedelta(days=32)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    users = CustomUser.objects.all()  # Replace `CustomUser` with your actual user model
+
+    payment_status = []
+    for user in users:
+        payment = Payment.objects.filter(user=user, payment_date__gte=current_month_start, payment_date__lt=current_month_end).first()
+        user_status = {
+            'user': user,
+            'paid': payment is not None,
+        }
+        payment_status.append(user_status)
+
+    context = {
+        'payment_status': payment_status,
+    }
+
+    return render(request, 'payment_list.html', context)
+
+def get_payment_data(username):
+    current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current_month_end = (current_month_start + timedelta(days=32)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    user = CustomUser.objects.get(username=username)  # Replace `CustomUser` with your actual user model
+
+    payment_status = []
+    payment = Payment.objects.filter(user=user, payment_date__gte=current_month_start, payment_date__lt=current_month_end).first()
+    
+    if payment and payment.payment_date.month == current_month_start.month:
+        user_status = {
+            'user': user.name,
+            'paid': True,
+        }
+    else:
+        user_status = {
+            'user': user.name,
+            'paid': False,
+        }
+    
+    payment_status.append(user_status)
+
+    return payment_status

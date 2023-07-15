@@ -12,7 +12,7 @@
                 <th>Name</th>
                 <th>Birthday</th>
                 <th>Username</th>
-                <th>Add Payment</th>
+                <th>Phone number </th>
                 <th>Delete User</th>
             </tr>
         </thead>
@@ -22,12 +22,7 @@
                     <td>{{ user.name }}</td>
                     <td>{{ user.birthday }}</td>
                     <td>{{ user.username }}</td>
-                    <td>
-                        <form method="POST" action="{% url 'add_payment' user.username %}">
-                            {% csrf_token %}
-                            <button type="submit" class="add-payment-btn">Add Payment</button>
-                        </form>
-                    </td>
+                    <td>{{ user.phone_number }}</td>
                     <td>
                         <form method="POST" action="{% url 'delete_user' user.username %}">
                             {% csrf_token %}

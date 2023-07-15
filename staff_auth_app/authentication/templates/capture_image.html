@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Webcam Image Capture</title>
+</head>
+<body>
+    <h1>Webcam Image Capture</h1>
+    <video id="video" width="640" height="480" autoplay></video>
+    <button id="capture-btn">Capture Image</button>
+
+    <script>
+        const video = document.getElementById('video');
+        const captureBtn = document.getElementById('capture-btn');
+
+        // Request access to the webcam
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                // Set the video source to the user's webcam
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error('Error accessing the webcam:', err);
+            });
+
+        // Capture the image from the video stream
+        captureBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert the canvas image to a Blob
+            canvas.toBlob(blob => {
+                // Create a FormData object and append the Blob
+                const formData = new FormData();
+                formData.append('image', blob, 'webcam-image.png');
+
+                // Send a POST request to the server to save the image
+                fetch('/save_image/', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Image captured and saved successfully!');
+                    } else {
+                        alert('Failed to save the image.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving the image:', error);
+                });
+            }, 'image/png');
+        });
+    </script>
+</body>
+</html>

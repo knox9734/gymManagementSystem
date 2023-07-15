@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment List</title>
+</head>
+<body>
+    <h1>Payment List</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Name</th>
+                <th>Payment Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user_status in payment_status %}
+            <tr>
+                <td>{{ user_status.user.username }}</td>
+                <td>{{ user_status.user.name }}</td>
+                <td>{% if user_status.paid %}Paid{% else %}Not Paid{% endif %}</td>
+                <td>
+                    {% if not user_status.paid %}
+                    <form method="POST" action="{% url 'add_payment' user_status.user.username %}">
+                        {% csrf_token %}
+                        <button type="submit" class="add-payment-btn">Add Payment</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
