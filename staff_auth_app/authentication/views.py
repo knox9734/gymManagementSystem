@@ -19,6 +19,9 @@ import pywhatkit as pwk
 import paho.mqtt.client as mqtt
 import time
 import serial
+from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth import logout
+
 arduino = serial.Serial(port='COM9', baudrate=9600, timeout=.1)
 def register_user(request):
     if request.method == 'POST':
@@ -125,6 +128,11 @@ def users(request):
 def home(request):
     return render(request, 'home.html')
 
+
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser
+
+@user_passes_test(is_admin)
 def add_payment(request, username):
     if request.method == 'POST':
         # Get the user based on the username
@@ -154,7 +162,7 @@ def add_payment(request, username):
         return redirect('payment_list')
     else:
         # Handle GET request for the form display
-        return render(request, 'add_payment.html')
+        return redirect('payment_list')
 
 
 # def payment_table(request):
@@ -188,6 +196,10 @@ def payment_table(request):
 
     return render(request, 'payment_table.html', {'payments': payments,'notPaid':notPaid,'paid':paid,'monthly_paid_amounts': monthly_paid_amounts})
 
+def is_admin(user):
+    return user.is_authenticated and user.is_superuser
+
+@user_passes_test(is_admin)
 def delete_user(request, username):
     if request.method == 'POST':
         try:
@@ -201,7 +213,7 @@ def delete_user(request, username):
             messages.error(request, 'User does not exist.')
         return redirect('users')
     else:
-        return render(request, 'user_list.html')
+        return redirect('users')
     
 def upload_image(request):
     if request.method == 'POST' and 'image' in request.FILES:
@@ -354,3 +366,7 @@ def no_data(request):
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     return response
+
+def logout_view(request):
+    logout(request)
+    return redirect('home')
