@@ -15,4 +15,5 @@ urlpatterns = [
     path('delete_user/<str:username>/', views.delete_user, name='delete_user'),
     path('upload_image/', views.upload_image, name='upload_image'),
     path('payment_list/', views.payment_list, name='payment_list'),
+    path('no_data/', views.no_data, name='no_data'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

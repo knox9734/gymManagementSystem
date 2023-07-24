@@ -1,78 +1,135 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload Success</title>
+    <title>Payment List</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #F0F0F0;
+            overflow: hidden;
+            background-image: url("{% static 'images/man2_lg_2000w.webp' %}"); /* Replace "path/to/your/image.jpg" with the actual path to your image file */
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        h1 {
+            
+            color: #276df0;
+            font-size: 40px;
+            margin-top: 40px;
+        }
+
+        table {
+            margin: 20px auto;
+            border-collapse: collapse;
+            width: 60%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            background-color: white;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .scan-user-btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
         }
 
         .flash-animation {
             animation: flash 0.5s infinite;
         }
 
-        @keyframes flash {
-            0% { background-color: red; }
-            50% { background-color: white; }
-            100% { background-color: red; }
-        }
-
-        h1 {
-            margin-top: 40px;
-        }
-
-        table {
-            margin: 40px auto;
-            border-collapse: collapse;
-            font-size: 18px;
-            width: 80%;
-        }
-
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-        }
-
-        .not-paid {
-            background-color: red;
-            color: white;
-            animation: flash 0.5s infinite;
-        }
-
         .error-message {
-            font-size: 60px;
+            font-size: 24px;
+            font-weight: bold;
+            color: red;
         }
+
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        
+       
+
     </style>
 </head>
 <body>
-    <h1>Upload Success</h1>
+    
+
+    <audio id="alarmAudio" preload="auto">
+        <source src="{% static 'sounds/siren-alert-96052_vASVsaO6.mp3' %}" type="audio/mpeg">
+    
+    </audio>
+
+    <h1>Access Data</h1>
 
     <table>
-        <tr>
-            <th>User</th>
-            <th>Payment Status</th>
-        </tr>
-        {% for user_status in payment_status %}
-        <tr {% if not user_status.paid %}class="not-paid"{% endif %}>
-            <td>{{ user_status.user }}</td>
-            <td>{% if user_status.paid %}Paid{% else %}Not Paid{% endif %}</td>
-        </tr>
-        {% endfor %}
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Payment Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ payment_status.user }}</td>
+                <td>{% if payment_status.paid %}Paid{% else %}Not Paid{% endif %}</td>
+            </tr>
+        </tbody>
     </table>
 
-    <p {% if not user_status.paid %}class="error-message"{% endif %}>
-        {% if not user_status.paid %}You have not paid for this month. Please make the payment.{% endif %}
-    </p>
+    {% if not payment_status.paid %}
+    <p class="error-message flash-animation">You have not paid for this month. Please make the payment.</p>
+    <p class="error-message flash-animation">Contact your Gym Owner to Enter the Gym.</p>
+    <p class="error-message flash-animation">071 730 1658 / 076 544 2131</p>
 
     <script>
-        var notPaidRows = document.querySelectorAll('.not-paid');
-        notPaidRows.forEach(function(row) {
-            row.classList.add('flash-animation');
-        });
+        // Function to play the alarm sound for 5 seconds
+        function playAlarmSound() {
+            var audio = document.getElementById("alarmAudio");
+            audio.play();
+            setTimeout(function() {
+                audio.pause();
+                audio.currentTime = 0;
+            }, 20000); // Stop the audio after 5 seconds
+        }
+
+        // Check if the payment status is not paid and play the alarm sound
+        var paymentStatus = '{% if payment_status.paid %}Paid{% else %}Not Paid{% endif %}';
+        if (paymentStatus === 'Not Paid') {
+            playAlarmSound();
+        }
     </script>
+    
+    {% endif %}
 
-    <!-- Other content or styling -->
+    <a href="{% url 'upload_image' %}" class="scan-user-btn">Scan Next User</a>
 
+    <script>
+        // Function to redirect to the upload_image page after 20 seconds
+        function redirectToUploadImage() {
+            window.location.href = "{% url 'upload_image' %}";
+        }
+
+        // Auto-redirect after 20 seconds
+        setTimeout(redirectToUploadImage, 20000); // 20000 milliseconds = 20 seconds
+    </script>
 </body>
 </html>

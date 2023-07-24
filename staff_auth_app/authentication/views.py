@@ -6,25 +6,20 @@ import random
 from django.db.models import Sum
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
-from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 import os
 import barcode
 from barcode.writer import ImageWriter
 from PIL import Image, ImageDraw, ImageFont
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google.oauth2.credentials import Credentials
-from google.oauth2 import service_account
-from google.auth import default
-from twilio.rest import Client
 import requests
 from pyzbar.pyzbar import decode
 import cv2
 from django.utils import timezone
 import pywhatkit as pwk
-
-
+import paho.mqtt.client as mqtt
+import time
+import serial
+arduino = serial.Serial(port='COM9', baudrate=9600, timeout=.1)
 def register_user(request):
     if request.method == 'POST':
         name = request.POST['name']
@@ -227,7 +222,8 @@ def upload_image(request):
         detected_barcodes = decode(img)
 
         if not detected_barcodes:
-            barcode_data = "Barcode Not Detected or your barcode is blank/corrupted!"
+            barcode_data = '0'
+            return no_data(request)
             # os.remove(image_path)
         else:
             # os.remove(image_path)
@@ -243,6 +239,12 @@ def upload_image(request):
             if customer_details:
                 print("customer found:", customer_details.name)
                 payment_status = get_payment_data(customer_details.username)
+                print(payment_status)
+                # door_open = payment_status.paid
+                value = '1'
+                if not payment_status['paid']:
+                    value = '0'
+                door_open(value)
                 return render(request, 'upload_success.html', {'payment_status': payment_status})
             else:
                 print("customer not found")
@@ -289,19 +291,66 @@ def get_payment_data(username):
     user = CustomUser.objects.get(username=username)  # Replace `CustomUser` with your actual user model
 
     payment_status = []
+    
     payment = Payment.objects.filter(user=user, payment_date__gte=current_month_start, payment_date__lt=current_month_end).first()
     
     if payment and payment.payment_date.month == current_month_start.month:
-        user_status = {
+        payment_status = {
             'user': user.name,
             'paid': True,
         }
     else:
-        user_status = {
+        payment_status = {
             'user': user.name,
             'paid': False,
         }
-    
-    payment_status.append(user_status)
 
     return payment_status
+
+
+
+def write_read(x):
+    
+    arduino.write(bytes(x, 'utf-8'))
+    time.sleep(0.05)
+    data = arduino.readline()
+    return data
+
+def blink_led():
+    arduino.write(b'1')  # Sending '1' to the Arduino to trigger the LED blink
+    time.sleep(0.05)
+    data = arduino.readline()
+    return data
+
+def door_open(value):
+    blinking_done = False
+
+    while not blinking_done:
+        random_value = '2'  # Change this to any random value other than '1'
+        response = write_read(random_value)
+        time.sleep(1)
+        random_value = '2'  # Change this to any random value other than '1'
+        response = write_read(random_value)
+        time.sleep(1)
+        print("Sent random value:", random_value)
+
+        num = value
+        time.sleep(1)
+        if num == '1':
+            response = blink_led()
+            print("door opening:", response)
+            blinking_done = True
+        elif num == '0':
+            response = write_read('0')
+            print("not paid alarm:", response)
+            blinking_done = True
+        else:
+            print("Invalid input. Only '1' or '0' triggers the LED action.")
+
+def no_data(request):
+    # Clear the cache headers to prevent caching
+    response = HttpResponse(render(request, 'no_data.html'))
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response

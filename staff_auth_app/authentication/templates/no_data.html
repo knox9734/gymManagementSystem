@@ -1,0 +1,66 @@
+{% load static %}  <!-- Make sure to include this tag at the beginning of the template -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Refresh Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px auto; /* Added margin to the top and centered horizontally */
+            background-color: #f2f2f2;
+            background-image: url("{% static 'images/wp4377342.webp' %}");
+            
+        }
+
+        h1 {
+            color: #f02727;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        h3 {
+            color: #ffffff;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background-color: #e99518;
+        }
+    </style>
+</head>
+<body>
+    <h1>No data in photo.</h1>
+    <h1>Please rescan and show your Barcode clearly to the camera.</h1>
+    <h1>Click Below Button to Re try</h1>
+    <h3>You will Auto Redirect to scan again in 7 Seconds</h3>
+    <button onclick="refreshPage()">Refresh</button>
+
+    <script>
+        function refreshPage() {
+            location.reload();
+        }
+
+        // Function to redirect to the upload_image page after 20 seconds
+        function redirectToUploadImage() {
+            window.location.href = "{% url 'upload_image' %}";
+        }
+
+        // Auto-redirect after 30 seconds (30000 milliseconds)
+        setTimeout(redirectToUploadImage, 7000);
+    </script>
+</body>
+</html>
+
+
