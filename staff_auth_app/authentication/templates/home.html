@@ -138,10 +138,17 @@
             padding: 20px;
             text-align: center;
             font-size: 14px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
         .footer a {
             color: #ffffff;
             text-decoration: none;
+        }
+        .footer p {
+            margin: 0;
+            flex: 1;
         }
         .hero-content h1:hover,.feature h2,
         .hero-content p:hover {
@@ -177,6 +184,7 @@
             <a href="{% url 'register_user' %}">Register</a>
             <!-- Show the Logout button if the user is authenticated (logged in) -->
             {% if user.is_authenticated %}
+
             <a href="{% url 'payment_table' %}">Payments</a>
             <a href="{% url 'users' %}">Users</a>
             <a href="{% url 'payment_list' %}">Add payment</a>
@@ -215,8 +223,16 @@
         </div>
     </section>
 
-    <footer class="footer">
-        <p>&copy; 2023 Dolphin Fitness Gym. All rights reserved. | Designed by <a href="#" target="_blank">Kavindu B</a></p>
-    </footer>
+    <div class="footer">
+        <p>Dolphin Fitness Gym<br><br>Contact: 071 730 1658 / 076 544 2131<br><br>Address<br>Maho-Nagollagama Road, Maho<br>60600</p>
+        
+        <p>Developed by: Kavindu B<br>
+            <a href="https://www.facebook.com/kavindu.sapun/" target="_blank">Facebook</a><br>
+            <a href="https://www.youtube.com/@ksbhd9633" target="_blank">Youtube</a><br>
+            <a href="https://www.instagram.com/kavindusbandaranayake/" target="_blank">Instagram</a><br>
+            <a href="https://www.linkedin.com/in/kavindub/" target="_blank">LinkedIn</a><br>
+        </p>
+        <br><p>Unauthorized reproduction of this site's content is prohibited.<br>All rights reserved. © 2023<br><br>Dolphin Fitness Gym.</p>
+    </div>
 </body>
 </html>

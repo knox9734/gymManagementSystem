@@ -17,12 +17,13 @@ import cv2
 from django.utils import timezone
 import pywhatkit as pwk
 import paho.mqtt.client as mqtt
-import time
+import time as arduinoTime
 import serial
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import logout
+from datetime import datetime, timedelta, time
 
-arduino = serial.Serial(port='COM9', baudrate=9600, timeout=.1)
+arduino = serial.Serial(port='COM13', baudrate=9600, timeout=.1)
 def register_user(request):
     if request.method == 'POST':
         name = request.POST['name']
@@ -34,7 +35,7 @@ def register_user(request):
 
         # Retrieve the user object using the username
         user = CustomUser.objects.get(username=user.username)
-        random_offset = random.randint(91, 122)
+        random_offset = random.randint(31, 32)
         current_date = datetime.now().date()
         random_date = current_date - timedelta(days=random_offset)
         # Create a payment record for the new user with an initial amount of 0
@@ -250,11 +251,13 @@ def upload_image(request):
         if customer_details is not None:
             if customer_details:
                 print("customer found:", customer_details.name)
+                print('Now calling get payment call')
                 payment_status = get_payment_data(customer_details.username)
+                print('after calling get payment call')
                 print(payment_status)
                 # door_open = payment_status.paid
                 value = '1'
-                if not payment_status['paid']:
+                if payment_status and not payment_status.get('paid'):
                     value = '0'
                 door_open(value)
                 return render(request, 'upload_success.html', {'payment_status': payment_status})
@@ -297,40 +300,51 @@ def payment_list(request):
     return render(request, 'payment_list.html', context)
 
 def get_payment_data(username):
+
     current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    current_month_end = (current_month_start + timedelta(days=32)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     user = CustomUser.objects.get(username=username)  # Replace `CustomUser` with your actual user model
 
-    payment_status = []
-    
-    payment = Payment.objects.filter(user=user, payment_date__gte=current_month_start, payment_date__lt=current_month_end).first()
-    
-    if payment and payment.payment_date.month == current_month_start.month:
-        payment_status = {
-            'user': user.name,
-            'paid': True,
-        }
-    else:
-        payment_status = {
-            'user': user.name,
-            'paid': False,
-        }
+    last_payment = Payment.objects.filter(user=user).order_by('-payment_date').first()
+
+    if last_payment:
+        # Get the last payment date and calculate the days since the last payment.
+        last_payment_date = last_payment.payment_date
+        days_since_payment = (current_month_start.date() - last_payment_date).days
+
+        # Determine whether the last payment is less than 30 days from the current date.
+        is_less_than_30_days = days_since_payment < 30
+        print('date is :'+str(is_less_than_30_days))
+        if is_less_than_30_days is True:
+            payment_status = {
+                'user': user.name,
+                'paid': is_less_than_30_days,
+                'last_payment_date': last_payment_date,
+                'days_remaining': 30 + days_since_payment,
+            }
+        else:
+            payment_status = {
+                'user': user.name,
+                'paid': False,
+                'last_payment_date': last_payment_date,
+                'days_remaining': 0,
+            }
 
     return payment_status
+
 
 
 
 def write_read(x):
     
     arduino.write(bytes(x, 'utf-8'))
-    time.sleep(0.05)
+    arduinoTime.sleep(0.05)
     data = arduino.readline()
     return data
 
 def blink_led():
     arduino.write(b'1')  # Sending '1' to the Arduino to trigger the LED blink
-    time.sleep(0.05)
+    arduinoTime.sleep(0.05)
     data = arduino.readline()
     return data
 
@@ -340,14 +354,14 @@ def door_open(value):
     while not blinking_done:
         random_value = '2'  # Change this to any random value other than '1'
         response = write_read(random_value)
-        time.sleep(1)
+        arduinoTime.sleep(1)
         random_value = '2'  # Change this to any random value other than '1'
         response = write_read(random_value)
-        time.sleep(1)
+        arduinoTime.sleep(1)
         print("Sent random value:", random_value)
 
         num = value
-        time.sleep(1)
+        arduinoTime.sleep(1)
         if num == '1':
             response = blink_led()
             print("door opening:", response)

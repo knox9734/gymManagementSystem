@@ -54,11 +54,22 @@
             color: #ffffff;
             padding: 20px;
             text-align: center;
-            font-size: 14px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .footer p {
+            margin: 0;
+            flex: 1;
         }
         .footer a {
             color: #ffffff;
             text-decoration: none;
+            margin: 0 10px;
         }
     </style>
 </head>
@@ -86,8 +97,16 @@
         {% endblock %}
     </div>
 
-    <footer class="footer">
-        <p>&copy; 2023 Dolphin Fitness Gym. All rights reserved. | Designed by <a href="https://www.facebook.com/kavindu.sapun/" target="_blank">Kavindu B</a></p>
-    </footer>
+    <div class="footer">
+        <p>Dolphin Fitness Gym<br>Contact: 071 730 1658 / 076 544 2131</p>
+        
+        <p>Developed by: Kavindu B<br>
+            <a href="https://www.facebook.com/kavindu.sapun/" target="_blank">Facebook</a>
+            <a href="https://www.youtube.com/@ksbhd9633" target="_blank">Youtube</a>
+            <a href="https://www.instagram.com/kavindusbandaranayake/" target="_blank">Instagram</a>
+            <a href="https://www.linkedin.com/in/kavindub/" target="_blank">LinkedIn</a>
+        </p>
+        <p>Unauthorized reproduction of this site's content is prohibited.<br>All rights reserved. © 2023</p>
+    </div>
 </body>
 </html>

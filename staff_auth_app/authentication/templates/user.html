@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
-
+{% load static %} 
 {% block title %}
     User List
 {% endblock %}
 
 {% block content %}
-    <h1>User List</h1>
+<body style="background-image: url('{% static 'images/polygon-glowing-joins-5k-fc-1920x1200.jpg' %}');color: white;">    
+<h1>User List</h1>
     <table>
         <thead>
             <tr>
@@ -33,7 +34,7 @@
             {% endfor %}
         </tbody>
     </table>
-
+</body>
     <style>
         * {
             box-sizing: border-box;
@@ -52,7 +53,7 @@
             text-align: left;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #000000;
         }
         .add-payment-btn {
             padding: 8px 16px;
@@ -74,7 +75,7 @@
             font-size: 14px;
         }
         .delete-user-btn:hover {
-            background-color: #d32f2f;
+            background-color: #d39f2f;
         }
     </style>
 {% endblock %}

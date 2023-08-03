@@ -85,12 +85,16 @@
             <tr>
                 <th>User</th>
                 <th>Payment Status</th>
+                <th>last payment date</th>
+                <th>Days Remaining</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>{{ payment_status.user }}</td>
                 <td>{% if payment_status.paid %}Paid{% else %}Not Paid{% endif %}</td>
+                <td>{{ payment_status.last_payment_date }}</td>
+                <td>{{ payment_status.days_remaining }}</td>
             </tr>
         </tbody>
     </table>
