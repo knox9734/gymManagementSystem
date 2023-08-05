@@ -384,3 +384,8 @@ def no_data(request):
 def logout_view(request):
     logout(request)
     return redirect('home')
+
+def gym_exit(request):
+    value = '1'
+    door_open(value)
+    return redirect('home')

@@ -19,4 +19,5 @@ urlpatterns = [
     path('payment_list/', views.payment_list, name='payment_list'),
     path('no_data/', views.no_data, name='no_data'),
     path('logout/', views.logout_view, name='logout'),
+    path('gym_exit/', views.gym_exit, name='gym_exit'),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
