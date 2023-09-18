@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth import logout
 from datetime import datetime, timedelta, time
 
-arduino = serial.Serial(port='COM13', baudrate=9600, timeout=.1)
+# arduino = serial.Serial(port='COM13', baudrate=9600, timeout=.1)
 def register_user(request):
     if request.method == 'POST':
         name = request.POST['name']
@@ -35,11 +35,11 @@ def register_user(request):
 
         # Retrieve the user object using the username
         user = CustomUser.objects.get(username=user.username)
-        random_offset = random.randint(31, 32)
+        random_offset = random.randint(61, 62)
         current_date = datetime.now().date()
         random_date = current_date - timedelta(days=random_offset)
         # Create a payment record for the new user with an initial amount of 0
-        payment = Payment(user=user, payment_date=random_date, amount=2500)
+        payment = Payment(user=user, payment_date=random_date,next_payment_date=random_date, amount=2500)
         payment.save()
 
         # Generate bar code 
@@ -151,10 +151,12 @@ def add_payment(request, username):
             payment = Payment.objects.get(user=user)
             payment.amount = amount
             payment.payment_date = date.today()
+            payment.next_payment_date = date.today() + timedelta(days=30)
             payment.save()
         except Payment.DoesNotExist:
             # Create a new payment instance
-            payment = Payment(user=user, payment_date=date.today(), amount=amount)
+            next_payment_date = date.today() + timedelta(days=30)
+            payment = Payment(user=user, payment_date=date.today(), amount=amount,next_payment_date=next_payment_date)
             payment.save()
 
         # Optionally, you can add a success message
@@ -259,7 +261,7 @@ def upload_image(request):
                 value = '1'
                 if payment_status and not payment_status.get('paid'):
                     value = '0'
-                door_open(value)
+                # door_open(value)
                 return render(request, 'upload_success.html', {'payment_status': payment_status})
             else:
                 print("customer not found")
@@ -301,77 +303,71 @@ def payment_list(request):
 
 def get_payment_data(username):
 
-    current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    user = CustomUser.objects.get(username=username)
 
-    user = CustomUser.objects.get(username=username)  # Replace `CustomUser` with your actual user model
+    # Get all payments for the user
+    user_payments = Payment.objects.filter(user=user).order_by('-payment_date')
 
-    last_payment = Payment.objects.filter(user=user).order_by('-payment_date').first()
+    # Initialize payment_status with default values
+    payment_status = {
+        'user': user.name if user else None,
+        'paid': False,
+        'last_payment_date': None,
+        'days_remaining': 0,
+    }
 
-    if last_payment:
-        # Get the last payment date and calculate the days since the last payment.
-        last_payment_date = last_payment.payment_date
-        days_since_payment = (current_month_start.date() - last_payment_date).days
+    if user_payments.exists():
+        most_recent_payment = user_payments.first()
+        payment_status['last_payment_date'] = most_recent_payment.payment_date
+        days_remaining = (most_recent_payment.next_payment_date - date.today()).days
+        print("most_recent_payment.next_payment_date")
+        print(most_recent_payment.next_payment_date)
+        payment_status['paid'] = days_remaining >= 0
+        payment_status['days_remaining'] = days_remaining
 
-        # Determine whether the last payment is less than 30 days from the current date.
-        is_less_than_30_days = days_since_payment < 30
-        print('date is :'+str(is_less_than_30_days))
-        if is_less_than_30_days is True:
-            payment_status = {
-                'user': user.name,
-                'paid': is_less_than_30_days,
-                'last_payment_date': last_payment_date,
-                'days_remaining': 30 + days_since_payment,
-            }
-        else:
-            payment_status = {
-                'user': user.name,
-                'paid': False,
-                'last_payment_date': last_payment_date,
-                'days_remaining': 0,
-            }
-
+    # Return the payment_status dictionary
     return payment_status
 
 
 
 
-def write_read(x):
+# def write_read(x):
     
-    arduino.write(bytes(x, 'utf-8'))
-    arduinoTime.sleep(0.05)
-    data = arduino.readline()
-    return data
+#     arduino.write(bytes(x, 'utf-8'))
+#     arduinoTime.sleep(0.05)
+#     data = arduino.readline()
+#     return data
 
-def blink_led():
-    arduino.write(b'1')  # Sending '1' to the Arduino to trigger the LED blink
-    arduinoTime.sleep(0.05)
-    data = arduino.readline()
-    return data
+# def blink_led():
+#     arduino.write(b'1')  # Sending '1' to the Arduino to trigger the LED blink
+#     arduinoTime.sleep(0.05)
+#     data = arduino.readline()
+#     return data
 
-def door_open(value):
-    blinking_done = False
+# def door_open(value):
+#     blinking_done = False
 
-    while not blinking_done:
-        random_value = '2'  # Change this to any random value other than '1'
-        response = write_read(random_value)
-        arduinoTime.sleep(1)
-        random_value = '2'  # Change this to any random value other than '1'
-        response = write_read(random_value)
-        arduinoTime.sleep(1)
-        print("Sent random value:", random_value)
+#     while not blinking_done:
+#         random_value = '2'  # Change this to any random value other than '1'
+#         response = write_read(random_value)
+#         arduinoTime.sleep(1)
+#         random_value = '2'  # Change this to any random value other than '1'
+#         response = write_read(random_value)
+#         arduinoTime.sleep(1)
+#         print("Sent random value:", random_value)
 
-        num = value
-        arduinoTime.sleep(1)
-        if num == '1':
-            response = blink_led()
-            print("door opening:", response)
-            blinking_done = True
-        elif num == '0':
-            response = write_read('0')
-            print("not paid alarm:", response)
-            blinking_done = True
-        else:
-            print("Invalid input. Only '1' or '0' triggers the LED action.")
+#         num = value
+#         arduinoTime.sleep(1)
+#         if num == '1':
+#             response = blink_led()
+#             print("door opening:", response)
+#             blinking_done = True
+#         elif num == '0':
+#             response = write_read('0')
+#             print("not paid alarm:", response)
+#             blinking_done = True
+#         else:
+#             print("Invalid input. Only '1' or '0' triggers the LED action.")
 
 def no_data(request):
     # Clear the cache headers to prevent caching
@@ -387,5 +383,5 @@ def logout_view(request):
 
 def gym_exit(request):
     value = '1'
-    door_open(value)
+    # door_open(value)
     return redirect('home')
